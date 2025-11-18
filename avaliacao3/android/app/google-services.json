@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "909762251816",
+    "project_id": "carrinhoapp-62b63",
+    "storage_bucket": "carrinhoapp-62b63.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:909762251816:android:c764d683cb47be5333791d",
+        "android_client_info": {
+          "package_name": "com.bdapp.avaliacao3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApoWObbtEF0lzVrL3Fvb0hsmtIDZJDkpw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
