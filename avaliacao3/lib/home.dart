@@ -34,7 +34,7 @@ class _HomeState extends State<Home> {
         loading = false;
       });
     } catch (e) {
-      print("Erro ao carregar produtos: $e");
+      Text("Erro ao carregar produtos: $e");
       setState(() {
         loading = false;
       });
