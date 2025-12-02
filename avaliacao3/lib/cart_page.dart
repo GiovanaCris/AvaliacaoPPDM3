@@ -1,262 +1,327 @@
-// import 'package:flutter/material.dart';
-
-// class CartPage extends StatelessWidget {
-//   final Map<String, dynamic> produto;
-
-//   const CartPage({super.key, required this.produto});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         backgroundColor: const Color.fromARGB(255, 116, 59, 180),
-//         title: const Text(
-//           "Carrinho",
-//           style: TextStyle(color: Colors.white),
-//         ),
-//         iconTheme: const IconThemeData(color: Colors.white),
-//       ),
-
-//       body: Padding(
-//         padding: const EdgeInsets.all(20.0),
-//         child: Column(
-//           children: [
-//             ClipRRect(
-//               borderRadius: BorderRadius.circular(12),
-//               child: Image.network(
-//                 produto["imagemProduto"],
-//                 height: 250,
-//                 fit: BoxFit.cover,
-//               ),
-//             ),
-
-//             const SizedBox(height: 20),
-
-//             Text(
-//               produto["Nome"],
-//               style: const TextStyle(
-//                 fontSize: 24,
-//                 fontWeight: FontWeight.bold,
-//                 color: Color.fromARGB(255, 78, 15, 160),
-//               ),
-//             ),
-
-//             const SizedBox(height: 10),
-
-//             Text(
-//               "R\$ ${produto["preco"].toStringAsFixed(2)}",
-//               style: const TextStyle(
-//                 fontSize: 22,
-//                 fontWeight: FontWeight.bold,
-//                 color: Colors.green,
-//               ),
-//             ),
-
-//             const Spacer(),
-
-//             ElevatedButton(
-//               onPressed: () {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   const SnackBar(
-//                       content: Text("Função de comprar ainda não implementada!")),
-//                 );
-//               },
-//               style: ElevatedButton.styleFrom(
-//                 backgroundColor: const Color.fromARGB(255, 78, 15, 160),
-//                 foregroundColor: Colors.white,
-//                 padding:
-//                     const EdgeInsets.symmetric(horizontal: 60, vertical: 16),
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(12),
-//                 ),
-//               ),
-//               child: const Text(
-//                 "Finalizar Compra",
-//                 style: TextStyle(fontSize: 18),
-//               ),
-//             )
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CartPage extends StatefulWidget {
-  final Map<String, dynamic> produto;
-
-  const CartPage({super.key, required this.produto});
+  const CartPage({super.key});
 
   @override
   State<CartPage> createState() => _CartPageState();
 }
 
 class _CartPageState extends State<CartPage> {
-  final String userId = "gigi"; // usuário logado
-  int quantidade = 1;
+  final String userId = "gigi"; // substitua pelo usuário logado
+
+  // Lista de itens do carrinho
+  List<Map<String, dynamic>> carrinho = [];
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    carregarQuantidade();
+    carregarCarrinho();
   }
 
-  // ------------------ GET QUANTIDADE ------------------
-  Future<void> carregarQuantidade() async {
-    final doc = await FirebaseFirestore.instance
+  // ------------------ CARREGAR CARRINHO ------------------
+  Future<void> carregarCarrinho() async {
+    setState(() => loading = true);
+
+    final snapshot = await FirebaseFirestore.instance
         .collection("Carrinho")
         .doc(userId)
         .collection("itens")
-        .doc(widget.produto["id"])
         .get();
 
-    if (doc.exists) {
-      setState(() {
-        quantidade = doc["quantidade"];
-      });
-    }
+    final itens = snapshot.docs.map((doc) {
+      final data = doc.data();
+      data["id"] = doc.id; // salvar id do documento
+      return data;
+    }).toList();
+
+    setState(() {
+      carrinho = itens;
+      loading = false;
+    });
   }
 
-  // ------------------ PUT: Aumentar quantidade ------------------
-  Future<void> aumentarQuantidade() async {
-    setState(() => quantidade++);
+  // ------------------ AUMENTAR QUANTIDADE ------------------
+  Future<void> aumentarQuantidade(Map<String, dynamic> produto) async {
+    produto["quantidade"] = (produto["quantidade"] ?? 1) + 1;
 
     await FirebaseFirestore.instance
         .collection("Carrinho")
         .doc(userId)
         .collection("itens")
-        .doc(widget.produto["id"])
-        .set({
-      "Nome": widget.produto["Nome"],
-      "preco": widget.produto["preco"],
-      "imagemProduto": widget.produto["imagemProduto"],
-      "quantidade": quantidade,
-    }, SetOptions(merge: true));
+        .doc(produto["id"])
+        .set(produto, SetOptions(merge: true));
+
+    setState(() {}); // Atualiza UI
   }
 
-  // ------------------ PUT: Diminuir quantidade ------------------
-  Future<void> diminuirQuantidade() async {
-    if (quantidade == 1) return;
+  // ------------------ DIMINUIR QUANTIDADE ------------------
+  Future<void> diminuirQuantidade(Map<String, dynamic> produto) async {
+    if ((produto["quantidade"] ?? 1) <= 1) return;
 
-    setState(() => quantidade--);
+    produto["quantidade"] = produto["quantidade"] - 1;
 
     await FirebaseFirestore.instance
         .collection("Carrinho")
         .doc(userId)
         .collection("itens")
-        .doc(widget.produto["id"])
-        .update({"quantidade": quantidade});
+        .doc(produto["id"])
+        .update({"quantidade": produto["quantidade"]});
+
+    setState(() {}); // Atualiza UI
   }
 
-  // ------------------ DELETE PRODUTO ------------------
-  Future<void> removerProduto() async {
+  // ------------------ REMOVER PRODUTO ------------------
+  Future<void> removerProduto(Map<String, dynamic> produto) async {
     await FirebaseFirestore.instance
         .collection("Carrinho")
         .doc(userId)
         .collection("itens")
-        .doc(widget.produto["id"])
+        .doc(produto["id"])
         .delete();
 
-    Navigator.pop(context);
+    carregarCarrinho(); // Recarrega lista
   }
 
-  // ------------------ POST COMPRA ------------------
+  // ------------------ FINALIZAR COMPRA ------------------
   Future<void> finalizarCompra() async {
-    await FirebaseFirestore.instance.collection("Pedidos").add({
-      "usuario": userId,
-      "produto": widget.produto["Nome"],
-      "quantidade": quantidade,
-      "total": quantidade * widget.produto["preco"],
-      "data": Timestamp.now(),
+    for (var produto in carrinho) {
+      await FirebaseFirestore.instance.collection("Pedidos").add({
+        "usuario": userId,
+        "produto": produto["Nome"],
+        "quantidade": produto["quantidade"],
+        "total": (produto["quantidade"] ?? 1) * produto["preco"],
+        "data": Timestamp.now(),
+      });
+
+      // Remove do carrinho
+      await FirebaseFirestore.instance
+          .collection("Carrinho")
+          .doc(userId)
+          .collection("itens")
+          .doc(produto["id"])
+          .delete();
+    }
+
+    setState(() {
+      carrinho = [];
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Compra realizada com sucesso!")),
+      const SnackBar(content: Text("Compra finalizada com sucesso!")),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.produto;
-
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 116, 59, 180),
-        title: const Text("Carrinho", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(p["imagemProduto"], height: 250, fit: BoxFit.cover),
-            ),
-            const SizedBox(height: 20),
-
-            Text(
-              p["Nome"],
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            Text(
-              "R\$ ${p["preco"].toStringAsFixed(2)}",
-              style: const TextStyle(fontSize: 22, color: Colors.green),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ---------------- QUANTIDADE ----------------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+      backgroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: Container(
+          color: const Color.fromARGB(255, 49, 0, 114),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: SafeArea(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-                  onPressed: diminuirQuantidade,
-                  icon: const Icon(Icons.remove_circle, size: 32, color: Colors.red),
-                ),
+                // Texto à esquerda
                 Text(
-                  quantidade.toString(),
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  "A loja de fios mais amada do Brasil  |  Ma&Gi Crochê",
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                IconButton(
-                  onPressed: aumentarQuantidade,
-                  icon: const Icon(Icons.add_circle, size: 32, color: Colors.green),
+                // Ícones das redes sociais à direita
+                Row(
+                  children: const [
+                    Icon(
+                      FontAwesomeIcons.facebookF,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                    SizedBox(width: 12),
+                    Icon(
+                      FontAwesomeIcons.instagram,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ],
                 ),
               ],
             ),
-
-            const Spacer(),
-
-            // --------------- DELETE ----------------
-            TextButton(
-              onPressed: removerProduto,
-              child: const Text(
-                "Remover item",
-                style: TextStyle(color: Colors.red, fontSize: 16),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // --------------- POST COMPRAR ----------------
-            ElevatedButton(
-              onPressed: finalizarCompra,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 78, 15, 160),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 16),
-              ),
-              child: const Text("Finalizar Compra", style: TextStyle(fontSize: 18)),
-            ),
-          ],
+          ),
         ),
       ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : carrinho.isEmpty
+          ? const Center(child: Text("Seu carrinho está vazio"))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: carrinho.length,
+              itemBuilder: (context, index) {
+                final p = carrinho[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                p["imagemProduto"],
+                                height: 80,
+                                width: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p["Nome"],
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "R\$ ${p["preco"].toStringAsFixed(2)}",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.deepPurple,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // A parte que você quer centralizar verticalmente
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment
+                                  .center, // Centraliza horizontalmente
+                              children: [
+                                Text(
+                                  "Deletar item:",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 8,
+                                ), // Espaço entre o texto e o ícone
+                                IconButton(
+                                  onPressed: () => removerProduto(p),
+                                  icon: const Icon(
+                                    Icons.delete_forever,
+                                    color: Colors.grey,
+                                    size: 30,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment
+                              .start, // Alinha o conteúdo à esquerda
+                          children: [
+                            // Coluna para empilhar o texto "Quantidade" em cima dos ícones
+                            Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start, // Alinha à esquerda
+                              children: [
+                                Text(
+                                  "Quantidade:",
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 5,
+                                ), // Espaço entre o texto e os ícones
+                                // Linha para os ícones de diminuir e aumentar a quantidade
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () => diminuirQuantidade(p),
+                                      icon: const Icon(
+                                        Icons.remove_circle,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    Text(
+                                      (p["quantidade"] ?? 1).toString(),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () => aumentarQuantidade(p),
+                                      icon: const Icon(
+                                        Icons.add_circle,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+      bottomNavigationBar: carrinho.isNotEmpty
+          ? Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: finalizarCompra,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF743BBC),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  "Finalizar Compra",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Color.fromARGB(255, 255, 255, 255),
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
