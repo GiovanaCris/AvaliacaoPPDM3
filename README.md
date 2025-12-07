@@ -14,5 +14,5 @@ O Ma&Gi crochê é umq E-commerce de peças de crochê produzidas ponto a ponto 
 Espero que faça várias compras e aproveite cada pedaçinho dessa experiência!
 
 🏷️ Para fazer o login
-Nome: gigi
-senha: gigi123
+- Nome: gigi
+- Senha: gigi12
