@@ -4,8 +4,8 @@
 - Este projeto foi realizado como avaliação na matéria de programação mobile no 3º termo do curso de Desenvolvimento de sistemas;
 - Espero que se divirta com parte da minha história assim como foi divertido produzi-lo!
 
-🤔 ## O que é o Ma&Gi Crochê?
-O Ma&Gi crochê é umq E-commerce de peças de crochê produzidas ponto a ponto manualmente com muito carinho para vocês.
+🤔 O que é o Ma&Gi Crochê?
+- O Ma&Gi crochê é umq E-commerce de peças de crochê produzidas ponto a ponto manualmente com muito carinho para vocês.
 É possível realizar:
 - Login para acessar todos os serviços disponíveis;
 - Visualizar nosso catálogo de produtos na página inicial;
