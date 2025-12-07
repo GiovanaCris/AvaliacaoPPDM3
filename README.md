@@ -5,7 +5,7 @@
 - Espero que se divirta com parte da minha história assim como foi divertido produzi-lo!
 
 🤔 O que é o Ma&Gi Crochê?
-- O Ma&Gi crochê é umq E-commerce de peças de crochê produzidas ponto a ponto manualmente com muito carinho para vocês.
+- O Ma&Gi crochê é um E-commerce de peças de crochê produzidas ponto a ponto manualmente com muito carinho para vocês.
 É possível realizar:
 - Login para acessar todos os serviços disponíveis;
 - Visualizar nosso catálogo de produtos na página inicial;
